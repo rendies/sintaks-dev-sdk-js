@@ -1,0 +1,51 @@
+{
+  "name": "@sintaksdev/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript client for the sintaks.dev OpenAI-compatible AI API gateway. Top up in IDR, call chat and image models, pay per request.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "openai",
+    "sintaks",
+    "ai",
+    "api",
+    "llm",
+    "indonesia",
+    "qris"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rendies/sintaks-dev-sdk-js.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "pnpm@10.29.3",
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
