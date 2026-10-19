@@ -5,14 +5,17 @@
 
 export const DEFAULT_BASE_URL = "https://api.sintaks.dev";
 export const DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
+export const DEFAULT_IMAGE_MODEL = "stable-image-core";
 
 /* ------------------------------------------------------------------ */
 /* Types (OpenAI-compatible shapes)                                    */
 /* ------------------------------------------------------------------ */
 
+export type MessageContentPart = { type: "text"; text: string };
+
 export interface ChatMessage {
-  role: "system" | "user" | "assistant" | "tool";
-  content: string;
+  role: "system" | "developer" | "user" | "assistant" | "tool";
+  content: string | MessageContentPart[];
   name?: string;
 }
 
@@ -20,11 +23,19 @@ export interface ChatCompletionCreateParams {
   model?: string;
   messages: ChatMessage[];
   stream?: boolean;
+  stream_options?: { include_usage?: boolean };
   temperature?: number;
   top_p?: number;
   max_tokens?: number;
+  max_completion_tokens?: number;
   stop?: string | string[];
   [key: string]: unknown;
+}
+
+export interface Usage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
 }
 
 export interface ChatCompletion {
@@ -37,11 +48,7 @@ export interface ChatCompletion {
     message: ChatMessage;
     finish_reason: string | null;
   }[];
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+  usage?: Usage;
 }
 
 export interface ChatCompletionChunk {
@@ -54,6 +61,19 @@ export interface ChatCompletionChunk {
     delta: { role?: string; content?: string | null };
     finish_reason: string | null;
   }[];
+  usage?: Usage;
+}
+
+export interface Model {
+  id: string;
+  object: "model";
+  created: number;
+  owned_by: string;
+}
+
+export interface ModelList {
+  object: "list";
+  data: Model[];
 }
 
 export interface ImageGenerationParams {
@@ -105,6 +125,26 @@ export class SintaksError extends Error {
     this.code = opts.code ?? null;
     this.requestId = opts.requestId ?? null;
   }
+
+  /** True for missing, malformed, revoked, or invalid API keys (401). */
+  get isUnauthorized(): boolean {
+    return this.status === 401;
+  }
+
+  /** True when the account balance can't cover the request (402). Top up first. */
+  get isInsufficientCredits(): boolean {
+    return this.status === 402;
+  }
+
+  /** True for upstream throttling (429). */
+  get isRateLimited(): boolean {
+    return this.status === 429;
+  }
+
+  /** True for errors worth retrying with backoff: 429, 503, 504. */
+  get isRetryable(): boolean {
+    return this.status === 429 || this.status === 503 || this.status === 504;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -123,6 +163,7 @@ export class Sintaks {
   readonly baseURL: string;
   readonly chat: ChatResource;
   readonly images: ImagesResource;
+  readonly models: ModelsResource;
 
   /** @internal */
   readonly fetchFn: typeof fetch;
@@ -137,6 +178,7 @@ export class Sintaks {
     this.extraHeaders = options.headers ?? {};
     this.chat = new ChatResource(this);
     this.images = new ImagesResource(this);
+    this.models = new ModelsResource(this);
   }
 
   async request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -201,7 +243,11 @@ class ChatResource {
         Accept: "text/event-stream",
         ...this.client.extraHeaders,
       },
-      body: JSON.stringify({ ...params, model: params.model ?? DEFAULT_CHAT_MODEL }),
+      body: JSON.stringify({
+        ...params,
+        model: params.model ?? DEFAULT_CHAT_MODEL,
+        stream_options: { include_usage: true },
+      }),
     });
 
     if (!res.ok || !res.body) {
@@ -264,7 +310,19 @@ class ImagesResource {
   constructor(private client: Sintaks) {}
 
   async generate(params: ImageGenerationParams): Promise<ImageGenerationResult> {
-    return this.client.request<ImageGenerationResult>("POST", "/v1/images/generations", params);
+    return this.client.request<ImageGenerationResult>("POST", "/v1/images/generations", {
+      ...params,
+      model: params.model ?? DEFAULT_IMAGE_MODEL,
+    });
+  }
+}
+
+class ModelsResource {
+  constructor(private client: Sintaks) {}
+
+  /** Lists the active models served by the gateway (GET /v1/models). */
+  async list(): Promise<ModelList> {
+    return this.client.request<ModelList>("GET", "/v1/models");
   }
 }
 

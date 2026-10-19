@@ -36,13 +36,18 @@ for await (const chunk of stream) {
 
 // Image generation
 const images = await client.images.generate({
-  model: "flux-schnell",
   prompt: "A futuristic Jakarta skyline at dusk",
 });
 console.log(images.data[0]?.url);
+
+// List active models
+const models = await client.models.list();
+console.log(models.data.map((m) => m.id));
 ```
 
-`model` defaults to `claude-sonnet-5-5` when omitted. Point at another environment with `baseURL`:
+`model` defaults to `claude-sonnet-5-5` for chat and `stable-image-core` for
+images when omitted. Streaming requests ask for `stream_options.include_usage`,
+so the final chunk carries `usage`. Point at another environment with `baseURL`:
 
 ```ts
 const client = new Sintaks({ apiKey: "sk-...", baseURL: "http://localhost:8080" });
@@ -50,14 +55,16 @@ const client = new Sintaks({ apiKey: "sk-...", baseURL: "http://localhost:8080" 
 
 ## Errors
 
-Failures throw `SintaksError` with `status`, `type`, `code`, and `requestId` (the gateway `X-Request-ID`, useful for support).
+Failures throw `SintaksError` with `status`, `type`, `code`, and `requestId` (the gateway `X-Request-ID`, useful for support). Convenience getters map the gateway's status semantics:
 
 ```ts
 try {
   await client.chat.completions.create({ messages: [{ role: "user", content: "x" }] });
 } catch (err) {
-  if (err instanceof SintaksError && err.status === 402) {
-    console.error("insufficient balance, top up first");
+  if (err instanceof SintaksError) {
+    if (err.isUnauthorized) console.error("invalid or revoked api key");
+    if (err.isInsufficientCredits) console.error("insufficient balance, top up first");
+    if (err.isRetryable) console.error(`retry after ${err.requestId}`);
   }
 }
 ```

@@ -1,6 +1,7 @@
 // src/index.ts
 var DEFAULT_BASE_URL = "https://api.sintaks.dev";
 var DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
+var DEFAULT_IMAGE_MODEL = "stable-image-core";
 var SintaksError = class extends Error {
   status;
   type;
@@ -14,12 +15,29 @@ var SintaksError = class extends Error {
     this.code = opts.code ?? null;
     this.requestId = opts.requestId ?? null;
   }
+  /** True for missing, malformed, revoked, or invalid API keys (401). */
+  get isUnauthorized() {
+    return this.status === 401;
+  }
+  /** True when the account balance can't cover the request (402). Top up first. */
+  get isInsufficientCredits() {
+    return this.status === 402;
+  }
+  /** True for upstream throttling (429). */
+  get isRateLimited() {
+    return this.status === 429;
+  }
+  /** True for errors worth retrying with backoff: 429, 503, 504. */
+  get isRetryable() {
+    return this.status === 429 || this.status === 503 || this.status === 504;
+  }
 };
 var Sintaks = class {
   apiKey;
   baseURL;
   chat;
   images;
+  models;
   /** @internal */
   fetchFn;
   /** @internal */
@@ -32,6 +50,7 @@ var Sintaks = class {
     this.extraHeaders = options.headers ?? {};
     this.chat = new ChatResource(this);
     this.images = new ImagesResource(this);
+    this.models = new ModelsResource(this);
   }
   async request(method, path, body) {
     const res = await this.fetchFn(`${this.baseURL}${path}`, {
@@ -82,7 +101,11 @@ var ChatResource = class {
         Accept: "text/event-stream",
         ...this.client.extraHeaders
       },
-      body: JSON.stringify({ ...params, model: params.model ?? DEFAULT_CHAT_MODEL })
+      body: JSON.stringify({
+        ...params,
+        model: params.model ?? DEFAULT_CHAT_MODEL,
+        stream_options: { include_usage: true }
+      })
     });
     if (!res.ok || !res.body) {
       let envelope = {};
@@ -132,13 +155,27 @@ var ImagesResource = class {
   }
   client;
   async generate(params) {
-    return this.client.request("POST", "/v1/images/generations", params);
+    return this.client.request("POST", "/v1/images/generations", {
+      ...params,
+      model: params.model ?? DEFAULT_IMAGE_MODEL
+    });
+  }
+};
+var ModelsResource = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  /** Lists the active models served by the gateway (GET /v1/models). */
+  async list() {
+    return this.client.request("GET", "/v1/models");
   }
 };
 var index_default = Sintaks;
 export {
   DEFAULT_BASE_URL,
   DEFAULT_CHAT_MODEL,
+  DEFAULT_IMAGE_MODEL,
   Sintaks,
   SintaksError,
   index_default as default

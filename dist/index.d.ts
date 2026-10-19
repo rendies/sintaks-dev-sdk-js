@@ -4,20 +4,34 @@
  */
 declare const DEFAULT_BASE_URL = "https://api.sintaks.dev";
 declare const DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
+declare const DEFAULT_IMAGE_MODEL = "stable-image-core";
+type MessageContentPart = {
+    type: "text";
+    text: string;
+};
 interface ChatMessage {
-    role: "system" | "user" | "assistant" | "tool";
-    content: string;
+    role: "system" | "developer" | "user" | "assistant" | "tool";
+    content: string | MessageContentPart[];
     name?: string;
 }
 interface ChatCompletionCreateParams {
     model?: string;
     messages: ChatMessage[];
     stream?: boolean;
+    stream_options?: {
+        include_usage?: boolean;
+    };
     temperature?: number;
     top_p?: number;
     max_tokens?: number;
+    max_completion_tokens?: number;
     stop?: string | string[];
     [key: string]: unknown;
+}
+interface Usage {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
 }
 interface ChatCompletion {
     id: string;
@@ -29,11 +43,7 @@ interface ChatCompletion {
         message: ChatMessage;
         finish_reason: string | null;
     }[];
-    usage?: {
-        prompt_tokens: number;
-        completion_tokens: number;
-        total_tokens: number;
-    };
+    usage?: Usage;
 }
 interface ChatCompletionChunk {
     id: string;
@@ -48,6 +58,17 @@ interface ChatCompletionChunk {
         };
         finish_reason: string | null;
     }[];
+    usage?: Usage;
+}
+interface Model {
+    id: string;
+    object: "model";
+    created: number;
+    owned_by: string;
+}
+interface ModelList {
+    object: "list";
+    data: Model[];
 }
 interface ImageGenerationParams {
     model?: string;
@@ -82,6 +103,14 @@ declare class SintaksError extends Error {
         code?: string | null;
         requestId?: string | null;
     });
+    /** True for missing, malformed, revoked, or invalid API keys (401). */
+    get isUnauthorized(): boolean;
+    /** True when the account balance can't cover the request (402). Top up first. */
+    get isInsufficientCredits(): boolean;
+    /** True for upstream throttling (429). */
+    get isRateLimited(): boolean;
+    /** True for errors worth retrying with backoff: 429, 503, 504. */
+    get isRetryable(): boolean;
 }
 interface SintaksOptions {
     apiKey: string;
@@ -94,6 +123,7 @@ declare class Sintaks {
     readonly baseURL: string;
     readonly chat: ChatResource;
     readonly images: ImagesResource;
+    readonly models: ModelsResource;
     /** @internal */
     readonly fetchFn: typeof fetch;
     /** @internal */
@@ -116,5 +146,11 @@ declare class ImagesResource {
     constructor(client: Sintaks);
     generate(params: ImageGenerationParams): Promise<ImageGenerationResult>;
 }
+declare class ModelsResource {
+    private client;
+    constructor(client: Sintaks);
+    /** Lists the active models served by the gateway (GET /v1/models). */
+    list(): Promise<ModelList>;
+}
 
-export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, type ErrorEnvelope, type GeneratedImage, type ImageGenerationParams, type ImageGenerationResult, Sintaks, SintaksError, type SintaksOptions, Sintaks as default };
+export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_IMAGE_MODEL, type ErrorEnvelope, type GeneratedImage, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };
