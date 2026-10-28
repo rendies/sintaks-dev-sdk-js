@@ -40,14 +40,22 @@ const images = await client.images.generate({
 });
 console.log(images.data[0]?.url);
 
+// Embeddings (default model qwen3-embedding-0-6b, 1024 dimensions)
+const embedding = await client.embeddings.create({
+  input: ["Serverless Postgres with sintaks.dev"],
+});
+console.log(embedding.data[0].embedding.length); // 1024
+
 // List active models
 const models = await client.models.list();
 console.log(models.data.map((m) => m.id));
 ```
 
-`model` defaults to `claude-sonnet-5-5` for chat and `stable-image-core` for
-images when omitted. Streaming requests ask for `stream_options.include_usage`,
-so the final chunk carries `usage`. Point at another environment with `baseURL`:
+`model` defaults to `claude-sonnet-5-5` for chat, `stable-image-core` for
+images, and `qwen3-embedding-0-6b` for embeddings when omitted. `dimensions`
+and `encoding_format: "float"` are supported on embeddings. Streaming requests
+ask for `stream_options.include_usage`, so the final chunk carries `usage`.
+Point at another environment with `baseURL`:
 
 ```ts
 const client = new Sintaks({ apiKey: "sk-...", baseURL: "http://localhost:8080" });

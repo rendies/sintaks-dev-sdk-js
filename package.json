@@ -1,6 +1,6 @@
 {
   "name": "@sintaksdev/sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript client for the sintaks.dev OpenAI-compatible AI API gateway. Top up in IDR, call chat and image models, pay per request.",
   "license": "MIT",
   "type": "module",
