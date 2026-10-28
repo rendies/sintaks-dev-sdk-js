@@ -51,8 +51,8 @@ const models = await client.models.list();
 console.log(models.data.map((m) => m.id));
 ```
 
-`model` defaults to `claude-sonnet-5-5` for chat, `stable-image-core` for
-images, and `qwen3-embedding-0-6b` for embeddings when omitted. `dimensions`
+`model` defaults to `gpt-5-5` for chat and images, and
+`qwen3-embedding-0-6b` for embeddings when omitted. `dimensions`
 and `encoding_format: "float"` are supported on embeddings. Streaming requests
 ask for `stream_options.include_usage`, so the final chunk carries `usage`.
 Point at another environment with `baseURL`:

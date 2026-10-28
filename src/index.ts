@@ -4,8 +4,8 @@
  */
 
 export const DEFAULT_BASE_URL = "https://api.sintaks.dev";
-export const DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
-export const DEFAULT_IMAGE_MODEL = "stable-image-core";
+export const DEFAULT_CHAT_MODEL = "gpt-5-5";
+export const DEFAULT_IMAGE_MODEL = "gpt-5-5";
 export const DEFAULT_EMBEDDING_MODEL = "qwen3-embedding-0-6b";
 
 /* ------------------------------------------------------------------ */

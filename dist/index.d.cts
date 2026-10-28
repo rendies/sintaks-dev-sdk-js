@@ -3,8 +3,8 @@
  * AI API gateway. Zero runtime dependencies; requires Node >= 18 (global fetch).
  */
 declare const DEFAULT_BASE_URL = "https://api.sintaks.dev";
-declare const DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
-declare const DEFAULT_IMAGE_MODEL = "stable-image-core";
+declare const DEFAULT_CHAT_MODEL = "gpt-5-5";
+declare const DEFAULT_IMAGE_MODEL = "gpt-5-5";
 declare const DEFAULT_EMBEDDING_MODEL = "qwen3-embedding-0-6b";
 type MessageContentPart = {
     type: "text";

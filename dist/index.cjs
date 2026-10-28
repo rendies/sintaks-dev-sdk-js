@@ -30,8 +30,8 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 var DEFAULT_BASE_URL = "https://api.sintaks.dev";
-var DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
-var DEFAULT_IMAGE_MODEL = "stable-image-core";
+var DEFAULT_CHAT_MODEL = "gpt-5-5";
+var DEFAULT_IMAGE_MODEL = "gpt-5-5";
 var DEFAULT_EMBEDDING_MODEL = "qwen3-embedding-0-6b";
 var SintaksError = class extends Error {
   status;
