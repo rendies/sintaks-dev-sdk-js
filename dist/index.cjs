@@ -22,6 +22,7 @@ var index_exports = {};
 __export(index_exports, {
   DEFAULT_BASE_URL: () => DEFAULT_BASE_URL,
   DEFAULT_CHAT_MODEL: () => DEFAULT_CHAT_MODEL,
+  DEFAULT_EMBEDDING_MODEL: () => DEFAULT_EMBEDDING_MODEL,
   DEFAULT_IMAGE_MODEL: () => DEFAULT_IMAGE_MODEL,
   Sintaks: () => Sintaks,
   SintaksError: () => SintaksError,
@@ -31,6 +32,7 @@ module.exports = __toCommonJS(index_exports);
 var DEFAULT_BASE_URL = "https://api.sintaks.dev";
 var DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
 var DEFAULT_IMAGE_MODEL = "stable-image-core";
+var DEFAULT_EMBEDDING_MODEL = "qwen3-embedding-0-6b";
 var SintaksError = class extends Error {
   status;
   type;
@@ -66,6 +68,7 @@ var Sintaks = class {
   baseURL;
   chat;
   images;
+  embeddings;
   models;
   /** @internal */
   fetchFn;
@@ -79,6 +82,7 @@ var Sintaks = class {
     this.extraHeaders = options.headers ?? {};
     this.chat = new ChatResource(this);
     this.images = new ImagesResource(this);
+    this.embeddings = new EmbeddingsResource(this);
     this.models = new ModelsResource(this);
   }
   async request(method, path, body) {
@@ -200,11 +204,24 @@ var ModelsResource = class {
     return this.client.request("GET", "/v1/models");
   }
 };
+var EmbeddingsResource = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async create(params) {
+    return this.client.request("POST", "/v1/embeddings", {
+      ...params,
+      model: params.model ?? DEFAULT_EMBEDDING_MODEL
+    });
+  }
+};
 var index_default = Sintaks;
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   DEFAULT_BASE_URL,
   DEFAULT_CHAT_MODEL,
+  DEFAULT_EMBEDDING_MODEL,
   DEFAULT_IMAGE_MODEL,
   Sintaks,
   SintaksError

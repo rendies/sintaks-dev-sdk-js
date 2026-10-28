@@ -6,6 +6,7 @@
 export const DEFAULT_BASE_URL = "https://api.sintaks.dev";
 export const DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
 export const DEFAULT_IMAGE_MODEL = "stable-image-core";
+export const DEFAULT_EMBEDDING_MODEL = "qwen3-embedding-0-6b";
 
 /* ------------------------------------------------------------------ */
 /* Types (OpenAI-compatible shapes)                                    */
@@ -94,6 +95,30 @@ export interface ImageGenerationResult {
   data: GeneratedImage[];
 }
 
+export interface EmbeddingCreateParams {
+  model?: string;
+  input: string | string[];
+  encoding_format?: "float";
+  dimensions?: number;
+  [key: string]: unknown;
+}
+
+export interface EmbeddingObject {
+  object: "embedding";
+  index: number;
+  embedding: number[];
+}
+
+export interface EmbeddingResponse {
+  object: "list";
+  data: EmbeddingObject[];
+  model: string;
+  usage?: {
+    prompt_tokens: number;
+    total_tokens: number;
+  };
+}
+
 export interface ErrorEnvelope {
   error?: {
     message?: string;
@@ -163,6 +188,7 @@ export class Sintaks {
   readonly baseURL: string;
   readonly chat: ChatResource;
   readonly images: ImagesResource;
+  readonly embeddings: EmbeddingsResource;
   readonly models: ModelsResource;
 
   /** @internal */
@@ -178,6 +204,7 @@ export class Sintaks {
     this.extraHeaders = options.headers ?? {};
     this.chat = new ChatResource(this);
     this.images = new ImagesResource(this);
+    this.embeddings = new EmbeddingsResource(this);
     this.models = new ModelsResource(this);
   }
 
@@ -323,6 +350,21 @@ class ModelsResource {
   /** Lists the active models served by the gateway (GET /v1/models). */
   async list(): Promise<ModelList> {
     return this.client.request<ModelList>("GET", "/v1/models");
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Embeddings                                                          */
+/* ------------------------------------------------------------------ */
+
+class EmbeddingsResource {
+  constructor(private client: Sintaks) {}
+
+  async create(params: EmbeddingCreateParams): Promise<EmbeddingResponse> {
+    return this.client.request<EmbeddingResponse>("POST", "/v1/embeddings", {
+      ...params,
+      model: params.model ?? DEFAULT_EMBEDDING_MODEL,
+    });
   }
 }
 

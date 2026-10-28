@@ -5,6 +5,7 @@
 declare const DEFAULT_BASE_URL = "https://api.sintaks.dev";
 declare const DEFAULT_CHAT_MODEL = "claude-sonnet-5-5";
 declare const DEFAULT_IMAGE_MODEL = "stable-image-core";
+declare const DEFAULT_EMBEDDING_MODEL = "qwen3-embedding-0-6b";
 type MessageContentPart = {
     type: "text";
     text: string;
@@ -85,6 +86,27 @@ interface ImageGenerationResult {
     created: number;
     data: GeneratedImage[];
 }
+interface EmbeddingCreateParams {
+    model?: string;
+    input: string | string[];
+    encoding_format?: "float";
+    dimensions?: number;
+    [key: string]: unknown;
+}
+interface EmbeddingObject {
+    object: "embedding";
+    index: number;
+    embedding: number[];
+}
+interface EmbeddingResponse {
+    object: "list";
+    data: EmbeddingObject[];
+    model: string;
+    usage?: {
+        prompt_tokens: number;
+        total_tokens: number;
+    };
+}
 interface ErrorEnvelope {
     error?: {
         message?: string;
@@ -123,6 +145,7 @@ declare class Sintaks {
     readonly baseURL: string;
     readonly chat: ChatResource;
     readonly images: ImagesResource;
+    readonly embeddings: EmbeddingsResource;
     readonly models: ModelsResource;
     /** @internal */
     readonly fetchFn: typeof fetch;
@@ -152,5 +175,10 @@ declare class ModelsResource {
     /** Lists the active models served by the gateway (GET /v1/models). */
     list(): Promise<ModelList>;
 }
+declare class EmbeddingsResource {
+    private client;
+    constructor(client: Sintaks);
+    create(params: EmbeddingCreateParams): Promise<EmbeddingResponse>;
+}
 
-export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_IMAGE_MODEL, type ErrorEnvelope, type GeneratedImage, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };
+export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_EMBEDDING_MODEL, DEFAULT_IMAGE_MODEL, type EmbeddingCreateParams, type EmbeddingObject, type EmbeddingResponse, type ErrorEnvelope, type GeneratedImage, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };
