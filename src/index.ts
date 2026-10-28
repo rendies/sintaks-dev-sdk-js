@@ -119,6 +119,26 @@ export interface EmbeddingResponse {
   };
 }
 
+export interface ResponsesCreateParams {
+  model?: string;
+  input: string;
+  instructions?: string;
+  max_output_tokens?: number;
+  temperature?: number;
+  top_p?: number;
+  stream?: boolean;
+  [key: string]: unknown;
+}
+
+export interface ResponsesObject {
+  id: string;
+  object: "response";
+  status: string;
+  model: string;
+  output?: unknown[];
+  usage?: unknown;
+}
+
 export interface ErrorEnvelope {
   error?: {
     message?: string;
@@ -189,6 +209,7 @@ export class Sintaks {
   readonly chat: ChatResource;
   readonly images: ImagesResource;
   readonly embeddings: EmbeddingsResource;
+  readonly responses: ResponsesResource;
   readonly models: ModelsResource;
 
   /** @internal */
@@ -205,6 +226,7 @@ export class Sintaks {
     this.chat = new ChatResource(this);
     this.images = new ImagesResource(this);
     this.embeddings = new EmbeddingsResource(this);
+    this.responses = new ResponsesResource(this);
     this.models = new ModelsResource(this);
   }
 
@@ -364,6 +386,17 @@ class EmbeddingsResource {
     return this.client.request<EmbeddingResponse>("POST", "/v1/embeddings", {
       ...params,
       model: params.model ?? DEFAULT_EMBEDDING_MODEL,
+    });
+  }
+}
+
+class ResponsesResource {
+  constructor(private client: Sintaks) {}
+
+  async create(params: ResponsesCreateParams): Promise<ResponsesObject> {
+    return this.client.request<ResponsesObject>("POST", "/v1/responses", {
+      ...params,
+      model: params.model ?? DEFAULT_CHAT_MODEL,
     });
   }
 }

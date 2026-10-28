@@ -107,6 +107,24 @@ interface EmbeddingResponse {
         total_tokens: number;
     };
 }
+interface ResponsesCreateParams {
+    model?: string;
+    input: string;
+    instructions?: string;
+    max_output_tokens?: number;
+    temperature?: number;
+    top_p?: number;
+    stream?: boolean;
+    [key: string]: unknown;
+}
+interface ResponsesObject {
+    id: string;
+    object: "response";
+    status: string;
+    model: string;
+    output?: unknown[];
+    usage?: unknown;
+}
 interface ErrorEnvelope {
     error?: {
         message?: string;
@@ -146,6 +164,7 @@ declare class Sintaks {
     readonly chat: ChatResource;
     readonly images: ImagesResource;
     readonly embeddings: EmbeddingsResource;
+    readonly responses: ResponsesResource;
     readonly models: ModelsResource;
     /** @internal */
     readonly fetchFn: typeof fetch;
@@ -180,5 +199,10 @@ declare class EmbeddingsResource {
     constructor(client: Sintaks);
     create(params: EmbeddingCreateParams): Promise<EmbeddingResponse>;
 }
+declare class ResponsesResource {
+    private client;
+    constructor(client: Sintaks);
+    create(params: ResponsesCreateParams): Promise<ResponsesObject>;
+}
 
-export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_EMBEDDING_MODEL, DEFAULT_IMAGE_MODEL, type EmbeddingCreateParams, type EmbeddingObject, type EmbeddingResponse, type ErrorEnvelope, type GeneratedImage, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };
+export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_EMBEDDING_MODEL, DEFAULT_IMAGE_MODEL, type EmbeddingCreateParams, type EmbeddingObject, type EmbeddingResponse, type ErrorEnvelope, type GeneratedImage, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, type ResponsesCreateParams, type ResponsesObject, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };

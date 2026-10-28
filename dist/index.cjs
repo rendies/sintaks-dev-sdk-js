@@ -69,6 +69,7 @@ var Sintaks = class {
   chat;
   images;
   embeddings;
+  responses;
   models;
   /** @internal */
   fetchFn;
@@ -83,6 +84,7 @@ var Sintaks = class {
     this.chat = new ChatResource(this);
     this.images = new ImagesResource(this);
     this.embeddings = new EmbeddingsResource(this);
+    this.responses = new ResponsesResource(this);
     this.models = new ModelsResource(this);
   }
   async request(method, path, body) {
@@ -213,6 +215,18 @@ var EmbeddingsResource = class {
     return this.client.request("POST", "/v1/embeddings", {
       ...params,
       model: params.model ?? DEFAULT_EMBEDDING_MODEL
+    });
+  }
+};
+var ResponsesResource = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async create(params) {
+    return this.client.request("POST", "/v1/responses", {
+      ...params,
+      model: params.model ?? DEFAULT_CHAT_MODEL
     });
   }
 };
