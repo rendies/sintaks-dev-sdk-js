@@ -85,6 +85,26 @@ export interface ImageGenerationParams {
   [key: string]: unknown;
 }
 
+/**
+ * Accepts a Blob/File (multipart part), raw bytes, or a string (blob text).
+ * For local files pass a `File`; in Node pass a `Buffer` (a `Uint8Array`).
+ */
+export type ImageFileInput = Blob | Uint8Array | ArrayBuffer | string;
+
+export interface ImageEditParams {
+  model?: string;
+  prompt: string;
+  /** One or more source images (multipart `image` parts). */
+  image: ImageFileInput | ImageFileInput[];
+  /** Optional mask(s) for inpainting (multipart `mask` parts). */
+  mask?: ImageFileInput | ImageFileInput[];
+  n?: number;
+  size?: string;
+  response_format?: "url" | "b64_json";
+  /** Passed through when the model supports them: quality, style, background, … */
+  [key: string]: unknown;
+}
+
 export interface GeneratedImage {
   url?: string;
   b64_json?: string;
@@ -364,6 +384,68 @@ class ImagesResource {
       model: params.model ?? DEFAULT_IMAGE_MODEL,
     });
   }
+
+  /** Image-to-image edits / inpainting (POST /v1/images/edits, multipart). */
+  async edits(params: ImageEditParams): Promise<ImageGenerationResult> {
+    const form = new FormData();
+
+    const appendParts = (name: string, value: ImageFileInput | ImageFileInput[]) => {
+      const parts = Array.isArray(value) ? value : [value];
+      for (const part of parts) {
+        form.append(name, toBlob(part));
+      }
+    };
+
+    appendParts("image", params.image);
+    if (params.mask !== undefined) appendParts("mask", params.mask);
+    form.append("prompt", params.prompt);
+    form.append("model", params.model ?? DEFAULT_IMAGE_MODEL);
+    if (params.n !== undefined) form.append("n", String(params.n));
+    if (params.size !== undefined) form.append("size", params.size);
+    if (params.response_format !== undefined) form.append("response_format", params.response_format);
+
+    const passthrough = new Set(["image", "mask", "prompt", "model", "n", "size", "response_format"]);
+    for (const [key, value] of Object.entries(params)) {
+      if (passthrough.has(key) || typeof value !== "string") continue;
+      form.append(key, value);
+    }
+
+    const res = await this.client.fetchFn(`${this.client.baseURL}/v1/images/edits`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.client.apiKey}`,
+        ...this.client.extraHeaders,
+      },
+      body: form,
+    });
+
+    if (!res.ok) {
+      let envelope: ErrorEnvelope = {};
+      try {
+        envelope = (await res.json()) as ErrorEnvelope;
+      } catch {
+        // ignore non-JSON error body
+      }
+      throw new SintaksError(res.status, envelope.error?.message ?? `request failed with ${res.status}`, {
+        type: envelope.error?.type,
+        code: envelope.error?.code,
+        requestId: res.headers.get("x-request-id"),
+      });
+    }
+    return (await res.json()) as ImageGenerationResult;
+  }
+}
+
+function toBlob(input: ImageFileInput): Blob {
+  if (input instanceof Blob) return input;
+  if (input instanceof Uint8Array) {
+    // Copy into an ArrayBuffer-backed view so it always satisfies BlobPart.
+    const copy = new Uint8Array(input.byteLength);
+    copy.set(input);
+    return new Blob([copy.buffer]);
+  }
+  if (input instanceof ArrayBuffer) return new Blob([input]);
+  return new Blob([input]);
 }
 
 class ModelsResource {

@@ -40,6 +40,17 @@ const images = await client.images.generate({
 });
 console.log(images.data[0]?.url);
 
+// Image edit (img2img / inpainting, multipart)
+import { readFile } from "node:fs/promises";
+const edited = await client.images.edits({
+  prompt: "Add a chocolate fountain on the right",
+  image: await readFile("input.png"), // File | Blob | Uint8Array | ArrayBuffer | string
+  mask: await readFile("mask.png"),   // optional, for inpainting
+  model: "gpt-image-1",
+  size: "1024x1024",
+});
+console.log(edited.data[0]?.url);
+
 // Embeddings (default model qwen3-embedding-0-6b, 1024 dimensions)
 const embedding = await client.embeddings.create({
   input: ["Serverless Postgres with sintaks.dev"],

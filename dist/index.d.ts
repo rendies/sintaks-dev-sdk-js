@@ -78,6 +78,24 @@ interface ImageGenerationParams {
     size?: string;
     [key: string]: unknown;
 }
+/**
+ * Accepts a Blob/File (multipart part), raw bytes, or a string (blob text).
+ * For local files pass a `File`; in Node pass a `Buffer` (a `Uint8Array`).
+ */
+type ImageFileInput = Blob | Uint8Array | ArrayBuffer | string;
+interface ImageEditParams {
+    model?: string;
+    prompt: string;
+    /** One or more source images (multipart `image` parts). */
+    image: ImageFileInput | ImageFileInput[];
+    /** Optional mask(s) for inpainting (multipart `mask` parts). */
+    mask?: ImageFileInput | ImageFileInput[];
+    n?: number;
+    size?: string;
+    response_format?: "url" | "b64_json";
+    /** Passed through when the model supports them: quality, style, background, … */
+    [key: string]: unknown;
+}
 interface GeneratedImage {
     url?: string;
     b64_json?: string;
@@ -187,6 +205,8 @@ declare class ImagesResource {
     private client;
     constructor(client: Sintaks);
     generate(params: ImageGenerationParams): Promise<ImageGenerationResult>;
+    /** Image-to-image edits / inpainting (POST /v1/images/edits, multipart). */
+    edits(params: ImageEditParams): Promise<ImageGenerationResult>;
 }
 declare class ModelsResource {
     private client;
@@ -205,4 +225,4 @@ declare class ResponsesResource {
     create(params: ResponsesCreateParams): Promise<ResponsesObject>;
 }
 
-export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_EMBEDDING_MODEL, DEFAULT_IMAGE_MODEL, type EmbeddingCreateParams, type EmbeddingObject, type EmbeddingResponse, type ErrorEnvelope, type GeneratedImage, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, type ResponsesCreateParams, type ResponsesObject, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };
+export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_EMBEDDING_MODEL, DEFAULT_IMAGE_MODEL, type EmbeddingCreateParams, type EmbeddingObject, type EmbeddingResponse, type ErrorEnvelope, type GeneratedImage, type ImageEditParams, type ImageFileInput, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, type ResponsesCreateParams, type ResponsesObject, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };

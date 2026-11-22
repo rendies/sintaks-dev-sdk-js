@@ -195,7 +195,60 @@ var ImagesResource = class {
       model: params.model ?? DEFAULT_IMAGE_MODEL
     });
   }
+  /** Image-to-image edits / inpainting (POST /v1/images/edits, multipart). */
+  async edits(params) {
+    const form = new FormData();
+    const appendParts = (name, value) => {
+      const parts = Array.isArray(value) ? value : [value];
+      for (const part of parts) {
+        form.append(name, toBlob(part));
+      }
+    };
+    appendParts("image", params.image);
+    if (params.mask !== void 0) appendParts("mask", params.mask);
+    form.append("prompt", params.prompt);
+    form.append("model", params.model ?? DEFAULT_IMAGE_MODEL);
+    if (params.n !== void 0) form.append("n", String(params.n));
+    if (params.size !== void 0) form.append("size", params.size);
+    if (params.response_format !== void 0) form.append("response_format", params.response_format);
+    const passthrough = /* @__PURE__ */ new Set(["image", "mask", "prompt", "model", "n", "size", "response_format"]);
+    for (const [key, value] of Object.entries(params)) {
+      if (passthrough.has(key) || typeof value !== "string") continue;
+      form.append(key, value);
+    }
+    const res = await this.client.fetchFn(`${this.client.baseURL}/v1/images/edits`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.client.apiKey}`,
+        ...this.client.extraHeaders
+      },
+      body: form
+    });
+    if (!res.ok) {
+      let envelope = {};
+      try {
+        envelope = await res.json();
+      } catch {
+      }
+      throw new SintaksError(res.status, envelope.error?.message ?? `request failed with ${res.status}`, {
+        type: envelope.error?.type,
+        code: envelope.error?.code,
+        requestId: res.headers.get("x-request-id")
+      });
+    }
+    return await res.json();
+  }
 };
+function toBlob(input) {
+  if (input instanceof Blob) return input;
+  if (input instanceof Uint8Array) {
+    const copy = new Uint8Array(input.byteLength);
+    copy.set(input);
+    return new Blob([copy.buffer]);
+  }
+  if (input instanceof ArrayBuffer) return new Blob([input]);
+  return new Blob([input]);
+}
 var ModelsResource = class {
   constructor(client) {
     this.client = client;
