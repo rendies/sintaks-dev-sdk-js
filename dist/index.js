@@ -40,6 +40,7 @@ var Sintaks = class {
   images;
   embeddings;
   responses;
+  videos;
   models;
   /** @internal */
   fetchFn;
@@ -55,6 +56,7 @@ var Sintaks = class {
     this.images = new ImagesResource(this);
     this.embeddings = new EmbeddingsResource(this);
     this.responses = new ResponsesResource(this);
+    this.videos = new VideosResource(this);
     this.models = new ModelsResource(this);
   }
   async request(method, path, body) {
@@ -251,6 +253,21 @@ var ResponsesResource = class {
       ...params,
       model: params.model ?? DEFAULT_CHAT_MODEL
     });
+  }
+};
+var VideosResource = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  /** Submit an async video generation job (POST /v1/videos). No default
+   *  model: video models are per-provider, so `model` is required. */
+  async create(params) {
+    return this.client.request("POST", "/v1/videos", params);
+  }
+  /** Poll the job status (GET /v1/videos/{id}). */
+  async retrieve(id) {
+    return this.client.request("GET", `/v1/videos/${encodeURIComponent(id)}`);
   }
 };
 var index_default = Sintaks;

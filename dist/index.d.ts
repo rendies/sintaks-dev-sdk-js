@@ -104,6 +104,28 @@ interface ImageGenerationResult {
     created: number;
     data: GeneratedImage[];
 }
+interface VideoCreateParams {
+    model?: string;
+    prompt: string;
+    seconds?: number;
+    /** Passed through: resolution/size, aspect ratio, audio. */
+    size?: string;
+    aspect_ratio?: string;
+    audio?: boolean;
+    [key: string]: unknown;
+}
+interface VideoObject {
+    id: string;
+    object: "video";
+    created_at: number;
+    status: "queued" | "in_progress" | "completed" | "failed";
+    model?: string;
+    seconds?: number;
+    url?: string;
+    error?: string | null;
+    completed_at?: number | null;
+    usage?: Usage | null;
+}
 interface EmbeddingCreateParams {
     model?: string;
     input: string | string[];
@@ -183,6 +205,7 @@ declare class Sintaks {
     readonly images: ImagesResource;
     readonly embeddings: EmbeddingsResource;
     readonly responses: ResponsesResource;
+    readonly videos: VideosResource;
     readonly models: ModelsResource;
     /** @internal */
     readonly fetchFn: typeof fetch;
@@ -224,5 +247,14 @@ declare class ResponsesResource {
     constructor(client: Sintaks);
     create(params: ResponsesCreateParams): Promise<ResponsesObject>;
 }
+declare class VideosResource {
+    private client;
+    constructor(client: Sintaks);
+    /** Submit an async video generation job (POST /v1/videos). No default
+     *  model: video models are per-provider, so `model` is required. */
+    create(params: VideoCreateParams): Promise<VideoObject>;
+    /** Poll the job status (GET /v1/videos/{id}). */
+    retrieve(id: string): Promise<VideoObject>;
+}
 
-export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_EMBEDDING_MODEL, DEFAULT_IMAGE_MODEL, type EmbeddingCreateParams, type EmbeddingObject, type EmbeddingResponse, type ErrorEnvelope, type GeneratedImage, type ImageEditParams, type ImageFileInput, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, type ResponsesCreateParams, type ResponsesObject, Sintaks, SintaksError, type SintaksOptions, type Usage, Sintaks as default };
+export { type ChatCompletion, type ChatCompletionChunk, type ChatCompletionCreateParams, type ChatMessage, DEFAULT_BASE_URL, DEFAULT_CHAT_MODEL, DEFAULT_EMBEDDING_MODEL, DEFAULT_IMAGE_MODEL, type EmbeddingCreateParams, type EmbeddingObject, type EmbeddingResponse, type ErrorEnvelope, type GeneratedImage, type ImageEditParams, type ImageFileInput, type ImageGenerationParams, type ImageGenerationResult, type MessageContentPart, type Model, type ModelList, type ResponsesCreateParams, type ResponsesObject, Sintaks, SintaksError, type SintaksOptions, type Usage, type VideoCreateParams, type VideoObject, Sintaks as default };

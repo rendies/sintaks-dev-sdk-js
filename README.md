@@ -52,6 +52,19 @@ const edited = await client.images.edits({
 console.log(edited.data[0]?.url);
 
 // Embeddings (default model qwen3-embedding-0-6b, 1024 dimensions)
+// Async video generation: submit, poll, then use the CDN URL.
+const job = await client.videos.create({
+  model: "google/veo-3.1-lite-generate-001",
+  prompt: "a cat on a beach",
+  seconds: 4,
+});
+let video = job;
+while (video.status === "queued" || video.status === "in_progress") {
+  await new Promise((r) => setTimeout(r, 5000));
+  video = await client.videos.retrieve(job.id);
+}
+console.log(video.url); // provider CDN URL
+
 const embedding = await client.embeddings.create({
   input: ["Serverless Postgres with sintaks.dev"],
 });

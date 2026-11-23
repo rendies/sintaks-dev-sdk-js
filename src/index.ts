@@ -115,6 +115,30 @@ export interface ImageGenerationResult {
   data: GeneratedImage[];
 }
 
+export interface VideoCreateParams {
+  model?: string;
+  prompt: string;
+  seconds?: number;
+  /** Passed through: resolution/size, aspect ratio, audio. */
+  size?: string;
+  aspect_ratio?: string;
+  audio?: boolean;
+  [key: string]: unknown;
+}
+
+export interface VideoObject {
+  id: string;
+  object: "video";
+  created_at: number;
+  status: "queued" | "in_progress" | "completed" | "failed";
+  model?: string;
+  seconds?: number;
+  url?: string;
+  error?: string | null;
+  completed_at?: number | null;
+  usage?: Usage | null;
+}
+
 export interface EmbeddingCreateParams {
   model?: string;
   input: string | string[];
@@ -230,6 +254,7 @@ export class Sintaks {
   readonly images: ImagesResource;
   readonly embeddings: EmbeddingsResource;
   readonly responses: ResponsesResource;
+  readonly videos: VideosResource;
   readonly models: ModelsResource;
 
   /** @internal */
@@ -247,6 +272,7 @@ export class Sintaks {
     this.images = new ImagesResource(this);
     this.embeddings = new EmbeddingsResource(this);
     this.responses = new ResponsesResource(this);
+    this.videos = new VideosResource(this);
     this.models = new ModelsResource(this);
   }
 
@@ -480,6 +506,21 @@ class ResponsesResource {
       ...params,
       model: params.model ?? DEFAULT_CHAT_MODEL,
     });
+  }
+}
+
+class VideosResource {
+  constructor(private client: Sintaks) {}
+
+  /** Submit an async video generation job (POST /v1/videos). No default
+   *  model: video models are per-provider, so `model` is required. */
+  async create(params: VideoCreateParams): Promise<VideoObject> {
+    return this.client.request<VideoObject>("POST", "/v1/videos", params);
+  }
+
+  /** Poll the job status (GET /v1/videos/{id}). */
+  async retrieve(id: string): Promise<VideoObject> {
+    return this.client.request<VideoObject>("GET", `/v1/videos/${encodeURIComponent(id)}`);
   }
 }
 
